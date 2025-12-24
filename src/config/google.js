@@ -1,51 +1,33 @@
 import fs from "fs";
-import readline from "readline";
 import { google } from "googleapis";
 
-const credentials = JSON.parse(fs.readFileSync("credentials.json"));
+// 1️⃣ Load credentials (Secrets first, file fallback)
+const credentials = process.env.GOOGLE_CREDENTIALS
+  ? JSON.parse(process.env.GOOGLE_CREDENTIALS)
+  : JSON.parse(fs.readFileSync("credentials.json", "utf-8"));
 
-const SCOPES = [
-  "https://www.googleapis.com/auth/spreadsheets",
-  "https://www.googleapis.com/auth/youtube.upload"
-];
-
+// 2️⃣ Create OAuth client
 const auth = new google.auth.OAuth2(
   credentials.installed.client_id,
   credentials.installed.client_secret,
   credentials.installed.redirect_uris[0]
 );
 
+// 3️⃣ Load token (Secrets first, file fallback)
 export async function getAuthClient() {
-  if (fs.existsSync("token.json")) {
-    const token = JSON.parse(fs.readFileSync("token.json"));
-    auth.setCredentials(token);
+  if (process.env.GOOGLE_TOKEN) {
+    auth.setCredentials(JSON.parse(process.env.GOOGLE_TOKEN));
     return auth;
   }
 
-  const authUrl = auth.generateAuthUrl({
-    access_type: "offline",
-    scope: SCOPES,
-  });
+  if (fs.existsSync("token.json")) {
+    auth.setCredentials(
+      JSON.parse(fs.readFileSync("token.json", "utf-8"))
+    );
+    return auth;
+  }
 
-  console.log("\n🔑 AUTHORIZE THIS APP:\n");
-  console.log(authUrl);
-
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-
-  return new Promise((resolve) => {
-    rl.question("\nPaste the code from browser here: ", async (code) => {
-      rl.close();
-
-      const { tokens } = await auth.getToken(code);
-      auth.setCredentials(tokens);
-
-      fs.writeFileSync("token.json", JSON.stringify(tokens, null, 2));
-      console.log("✅ token.json saved successfully");
-
-      resolve(auth);
-    });
-  });
+  throw new Error(
+    "❌ No OAuth token found. Add GOOGLE_TOKEN secret or token.json"
+  );
 }
