@@ -1,0 +1,7 @@
+# Secrets (file names only)
+token.json
+credentials.json
+.env
+
+# Node
+node_modules
