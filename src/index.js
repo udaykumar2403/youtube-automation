@@ -9,7 +9,7 @@ const DAILY_LIMIT = 1;
 (async () => {
   const rows = await readSheet();
 
-  // ONLY pick strictly pending rows
+  // ✅ ONLY pick rows that are strictly pending
   const candidates = rows
     .map((row, index) => ({ row, index }))
     .filter(({ row }) => row[5] === "pending")
@@ -24,9 +24,10 @@ const DAILY_LIMIT = 1;
     const [videoUrl, title, description, tags, thumbnailUrl] = row;
 
     try {
-      // 🔒 LOCK ROW FIRST
+      // 🔒 STEP 1: Lock the row BEFORE upload
       await updateStatus(index, "uploading");
 
+      // 🚀 STEP 2: Upload the video
       await uploadShort({
         videoUrl,
         title,
@@ -35,13 +36,14 @@ const DAILY_LIMIT = 1;
         thumbnailUrl,
       });
 
-      // ✅ SUCCESS
+      // ✅ STEP 3: Upload SUCCESS → mark as uploaded
       await updateStatus(index, "uploaded");
       console.log(`✅ Uploaded & marked row ${index + 2} as uploaded`);
+
     } catch (err) {
       console.error("❌ Upload failed:", err.message);
 
-      // ❌ FAILURE (manual retry only)
+      // ❌ Upload FAILED → mark as failed
       await updateStatus(index, "failed");
       console.log(`⚠️ Marked row ${index + 2} as failed`);
     }
