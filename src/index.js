@@ -24,21 +24,16 @@ const DAILY_LIMIT = 1; // 🔥 change later if needed
   }
 
   for (const { row, index } of candidates) {
-    const [
-      videoPath,
-      title,
-      description,
-      tags,
-      thumbnailPath,
-    ] = row;
+    const [videoUrl, title, description, tags, thumbnailUrl] = row;
+
 
     try {
       await uploadShort({
-        videoPath,
+        videoUrl,
         title,
         description,
         tags,
-        thumbnailPath,
+        thumbnailUrl,
       });
 
       await updateStatus(index, "uploaded");
